@@ -296,7 +296,7 @@ def myApiMethod( self, ... ):
     user = Auth.protected_get_user_by_username( username )
     if user is None:
         # Occurs when the current authenticated user's username is not
-	# username and the current authenticated user is not a mod
+        # username and the current authenticated user is not a mod
         raise UnauthorizedException( 'Invalid credentials' )
 
     # Retrieved user successfully. Do stuff...
@@ -305,7 +305,11 @@ def myApiMethod( self, ... ):
 Configuration
 -------------
 
-Coming soon.
+There are a few configuration options available in `authtopus/config.py`.  Firstly, you can edit the email sender, subject, and body of emails that are sent for both email verification and password resets.  Note that for email to work in production, `config.EMAIL_SENDER` must be set to a valid sender address according to [the GAE mail documentation](https://cloud.google.com/appengine/docs/python/mail/#Python_Sending_mail).  Emails are also logged at the DEBUG level, so you can see emails in your log when running the development server with the `--log_level debug` option.
+
+Secondly, the lifespan of various tokens can be set by modifying the values in `config.TOKEN_LIFE_HOURS`.  Note that auth tokens should have a short lifespan so that if the token happens to be compromised, an attacker will only have access for a short period of time.
+
+Finally, there are also limits to how many unexpired password reset and verify email tokens a user can have, as well as the maximum number of tokens and user to potentially delete each time the respective cron job runs.  When employing the cron job to delete inactive users with no verified email, the amount of inactivity time can be set by the `config.UNVERIFIED_USER_LIFE_HOURS` parameter.
 
 Contact
 -------

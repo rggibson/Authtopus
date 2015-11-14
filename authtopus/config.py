@@ -42,7 +42,7 @@ TOKEN_LIFE_HOURS = {
     'password_reset': 3
 }
 
-# How many of some token types a user can have
+# How many unexpired tokens a user can have
 MAX_PASSWORD_RESET_TOKENS = 3
 MAX_VERIFY_EMAIL_TOKENS_PER_EMAIL = 3
 
