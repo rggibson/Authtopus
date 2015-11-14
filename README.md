@@ -143,46 +143,46 @@ Endpoints
   Request fields:
 
   Response fields:
-    * email_verified - The verified email of the user, if any
-    * email_pending - The pending email of the user. May be same as email_verified.
-    * username - The username of the user
-    * has_password - Boolean indicating if the user can login via username and pasword (as opposed to only via social login)
+    * `email_verified` - The verified email of the user, if any
+    * `email_pending` - The pending email of the user. May be same as email_verified.
+    * `username` - The username of the user
+    * `has_password` - Boolean indicating if the user can login via username and pasword (as opposed to only via social login)
 
   Errors:
-    * 401 UnauthorizedException - Occurs if the authorization token provided is invalid.
+    * 401 `UnauthorizedException` - Occurs if the authorization token provided is invalid.
 
 - GET: `/auth/v1.0/get_user` - Retrieves a user by username
   Request fields:
-    * username - The username of the user object we are requesting
+    * `username` - The username of the user object we are requesting
 
   Response fields:
-    * email_verified - The verified email of the user, if any
-    * email_pending - The pending email of the user. May be same as email_verified.
-    * username - The username of the user
-    * has_password - Boolean indicating if the user can login via username and pasword (as opposed to only via social login)
+    * `email_verified` - The verified email of the user, if any
+    * `email_pending` - The pending email of the user. May be same as email_verified.
+    * `username` - The username of the user
+    * `has_password` - Boolean indicating if the user can login via username and pasword (as opposed to only via social login)
 
   Errors:
-    * 400 BadRequestException - Occurs if an invalid username is provided
-    * 401 UnauthorizedException - Occurs if the requested username is not the username of the currently authenticated user and the currently authenticated user is not a mod (users can be assigned mod status in the datastore viewer of the developer's console)
-    * 404 NoFoundException - Occurs if no user exists with the requested username
+    * 400 `BadRequestException` - Occurs if an invalid username is provided
+    * 401 `UnauthorizedException` - Occurs if the requested username is not the username of the currently authenticated user and the currently authenticated user is not a mod (users can be assigned mod status in the datastore viewer of the developer's console)
+    * 404 `NoFoundException` - Occurs if no user exists with the requested username
 
-- POST: `/auth/v1.0/update_user` - Updates information for the user with the requested old_username
+- POST: `/auth/v1.0/update_user` - Updates information for the user with the requested `old_username`
   Request fields:
-    * old_username - The username of the user to update
-    * email - The new email for the user
-    * username - The new username for the user
-    * old_password - The user's old password (empty to leave password unchanged)
+    * `old_username` - The username of the user to update
+    * `email` - The new email for the user
+    * `username` - The new username for the user
+    * `old_password` - The user's old password (empty to leave password unchanged)
     * password - The user's new password
     * verification_url - URL sent to the user's new email address where the user is directed to go to verify their new email address if necessary
 
   Response fields:
-    * email - The new email for the user
-    * username - The new username for the user
+    * `email` - The new email for the user
+    * `username` - The new username for the user
 
   Errors:
-    * 400 BadRequestException - Occurs if any of the request parameters are invalid
-    * 401 UnauthorizedException - Occurs if the requested old_username is not the username of the currently authenticated user and the currently authenticated user is not a mod
-    * 409 ConflictException - Occurs if the new email or username are already in use by another User
+    * 400 `BadRequestException` - Occurs if any of the request parameters are invalid
+    * 401 `UnauthorizedException` - Occurs if the requested old_username is not the username of the currently authenticated user and the currently authenticated user is not a mod
+    * 409 `ConflictException` - Occurs if the new email or username are already in use by another User
 
 - POST: `/auth/v1.0/register` - Registers a new user
   Request fields:
