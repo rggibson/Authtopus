@@ -3,7 +3,7 @@ Authtopus
 
 Authtopus is a python authorization library for use with [Google Cloud Endpoints (GCE)](https://cloud.google.com/endpoints/).  While GCE does have authentication built-in, as of writing this document GCE authentication only supports registration / login using Google accounts.  Authtopus, on the other hand, supports standard username and password logins as well as logins via social accounts (only Facebook and Google currently supported, but more social providers could be supported in the future).  Registrations via different methods with matching verified email addresses are merged into one user account.
 
-Check out the library in action in this very simple [Authtopus Example](https://authtopus.appspot.com) app.  If you think you might like to use this library in a new or existing project, then read on.  Note that I am by no means a web security expert and while I believe the library provides secure authentication, I cannot guarantee that I didn't miss something so the library is use at your own risk.
+Check out the library in action in this very simple [Authtopus Example](https://authtopus.appspot.com) app, along with [the code that runs the app](https://github.com/rggibson/Authtopus-Example).  If you think you might like to use this library in a new or existing project, then read on.  Note that I am by no means a web security expert and while I believe the library provides secure authentication, I cannot guarantee that I didn't miss something so the library is use at your own risk.
 
 Basic Usage
 -----------
@@ -91,7 +91,7 @@ Installation
 		     		] )
   ```
 
-  NOTE: I actually had trouble getting appengine_config.py to run properly on startup in the [Authtopus Example](https://authtopus.appspot.com) app.  If you are getting errors similar to "No module names authtopus.api" when trying to run your app, try putting this code in `main.py` before the code shown in step 3 below.
+  NOTE: I actually had trouble getting appengine_config.py to run properly on startup in the [Authtopus Example](https://github.com/rggibson/Authtopus-Example) app.  If you are getting errors similar to "No module names authtopus.api" when trying to run your app, try putting this code in `main.py` before the code shown in step 3 below.
 
 3. In `main.py` in your project's root directory, add the following lines if not already present (leaving out the optional cron handler if you choose to):
 
