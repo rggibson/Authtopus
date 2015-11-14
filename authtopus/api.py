@@ -287,8 +287,6 @@ class Auth( remote.Service ):
         if user is None:
             raise UnauthorizedException( 'Invalid credentials' )
 
-        logging.debug( "User api called successfully, username="
-                       + user.username )
         return user
 
     @User.method( request_fields=( 'username', ),

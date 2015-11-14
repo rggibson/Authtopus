@@ -140,18 +140,20 @@ Endpoints
 ---------
 
 - GET: `/auth/v1.0/current_user` - Retrieves the currently authenticated user
+
   Request fields:
 
   Response fields:
     * `email_verified` - The verified email of the user, if any
     * `email_pending` - The pending email of the user. May be same as email_verified.
     * `username` - The username of the user
-    * `has_password` - Boolean indicating if the user can login via username and pasword (as opposed to only via social login)
+    * `has_password` - Boolean indicating if the user can login via username and password (as opposed to only via social login)
 
   Errors:
     * 401 `UnauthorizedException` - Occurs if the authorization token provided is invalid.
 
 - GET: `/auth/v1.0/get_user` - Retrieves a user by username
+
   Request fields:
     * `username` - The username of the user object we are requesting
 
@@ -167,31 +169,138 @@ Endpoints
     * 404 `NoFoundException` - Occurs if no user exists with the requested username
 
 - POST: `/auth/v1.0/update_user` - Updates information for the user with the requested `old_username`
+
   Request fields:
     * `old_username` - The username of the user to update
     * `email` - The new email for the user
     * `username` - The new username for the user
     * `old_password` - The user's old password (empty to leave password unchanged)
-    * password - The user's new password
-    * verification_url - URL sent to the user's new email address where the user is directed to go to verify their new email address if necessary
+    * `password` - The user's new password
+    * `verification_url` - URL sent to the user's new email address where the user is directed to go to verify their new email address if necessary
 
   Response fields:
     * `email` - The new email for the user
     * `username` - The new username for the user
 
   Errors:
-    * 400 `BadRequestException` - Occurs if any of the request parameters are invalid
+    * 400 `BadRequestException` - Occurs if any of the request parameters are invalid.  The request parameters that are invalid are indicated in the error message, separated by '|' characters, where each part of the message is of the form `<field>:<invalid reason>`.
     * 401 `UnauthorizedException` - Occurs if the requested old_username is not the username of the currently authenticated user and the currently authenticated user is not a mod
-    * 409 `ConflictException` - Occurs if the new email or username are already in use by another User
+    * 409 `ConflictException` - Occurs if the new email or username are already in use by another User.  The error message indicates which fields are conflicted, separated by a '|' character.
 
 - POST: `/auth/v1.0/register` - Registers a new user
+
+  Request and response fields:
+    * `email` - The user's email
+    * `username` - The user's username
+    * `password` - The user's password
+    * `verification_url` - URL sent to the user's email address where the user is directed to go to verify their email address
+
+  Errors:
+    * 400 `BadRequestException` - Occurs if any of the request parameters are invalid.  The request parameters that are invalid are indicated in the error message, separated by '|' characters, where each part of the message is of the form `<field>:<invalid reason>`.
+    * 409 `ConflictException` - Occurs if the email or username are already in use by another User.  The error message indicates which fields are conflicted, separated by a '|' character.
+
+- POST: `/auth/v1.0/login` - Logs a user in
+
   Request fields:
-    
+    * `username_or_email` - The username or email of the user logging in
+    * `password` - The password of the user logging in
+
+  Response fields:
+    * `user_id_auth_token` - Token that should the `Authorization` header should be set to in order to authenticate all future requests.
+    * `user` - User object for the logged in user containing the same fields as the response fields of `/auth/v1.0/current_user`.
+
+  Errors:
+    * 400 `BadRequestException` - Occurs if invalid credentials are provided
+    * 409 `ConflictException` - Occurs in rare case when creating an authorization token fails.
+
+- POST: `/auth/v1.0/social_login` - Logs a user in via a social provider, registering the user in the process if necessary
+
+  Request and response fields:
+    * `access_token` - Access token from the social provider
+    * `provider` - The social provider.  Currently only 'Facebook' and 'Google' are supported.
+    * `password` - The user's password, if any
+
+  Response fields:
+    * `user_id_auth_token` - Token that should the `Authorization` header should be set to in order to authenticate all future requests.
+    * `user` - User object for the logged in user containing the same fields as the response fields of `/auth/v1.0/current_user`.
+    * `password_required` - Boolean value indicating whether a password is required to complete the login.  When true, no `user_id_auth_token` or `user` will be provided in the response.  This field will only be true when a user has already registered with a verified email address that matches the verified email address from the social provider, and that user has a password for logging in.  In this case, the user should resend the request with the user's password.  This will merge the user's social id with their User account and future social logins will not require a password.
+
+  Errors:
+    * 400 `BadRequestException` - Occurs when a bad access token or provider is given
+    * 401 `UnauthorizedException` - Occurs when attempting to merge a social login with a username and password login for the first time, but the provided password is invalid.
+    * 409 `ConflictException` - Occurs when email is already in use by another user, but that user has not verified the email address.  Also occurs in other rare instances when authtopus fails to set a unique username for the User or fails to generate an authorization token.
+
+- POST: `/auth/v1.0/logout` - Logs the currently logged in user out
+
+  Request and response fields:
+
+  Errors:
+    * 401 `UnauthorizedException` - Occurs when no valid authorization token is provided
+
+- POST: `/auth/v1.0/send_email_verification` - Sends a new email requesting verification of the user's email address
+
+  Request fields:
+    * `username` - The username of the user to send the email to
+    * `verification_url` - URL sent to the user's email address where the user is directed to go to verify their email address.  A `token` parameter will be appended to this URL .
+
+  Response fields:
+    * `email` - The email address that the verification email was sent to
+
+  Errors:
+    * 400 `BadRequestException` - Occurs when no verification url is provided
+    * 401 `UnauthorizedException` - Occurs when the requested `username` does not belong to the currently authorized user and the currently authenticated user is not a mod
+    * 409 `ConflictException` - Occurs when too many verification emails have recently been sent to the user's email address (see Configuration section below)
+
+- POST: `/auth/v1.0/verify_email` - Verify a user's email address
+
+  Request and response fields:
+    * `token` - Verification token that was appended to the `verification_url` when sent
+
+  Erros:
+    * 400 `BadRequestException` - Occurs when token is invalid
+    * 401 `UnauthorizedException` - Occurs when either no user is authenticated or the currently authenticated user does not own the requested token
+
+- POST: `/auth/v1.0/password_reset` - Sends a password reset email
+
+  Request and response fields:
+    * `email` - The email to send the password reset information to
+    * `set_password_url` - URL that the user is directed to proceed to in order to reset their password.  A `user_id` and `token` are appended as parameters to the URL that the user requires to set a new password.
+
+  Errors:
+    * 400 `BadRequestException` - Occurs when no user currently registered with the provided email or no `set_password_url` is provided
+    * 409 `ConflictException` - Occurs when sending email fails
+
+ - POST: `/auth/v1.0/set_password` - Sets a new password for the user
+
+   Request and response fields:
+     * `new_password` - The new password for the user
+     * `user_id` - The id of the user requesting a new password
+     * `token` - Password reset token from the password reset email
+
+   Errors:
+     * 400 `BadRequestException` - Occurs when `password` does not meet the required criteria (4-20 characters in length)
+     * 401 `UnauthorizedException` - Occurs when an invalid token is provided
 
 Retrieving Users on the Server
 ------------------------------
 
-Coming soon.
+There are two ways to retrieve users from the server in python. The first is described above in the Basic Usage section by using the `Auth.get_current_user` function.  The second way is to retrieve a specifc user by username:
+
+```python
+from endpoints import UnauthorizedException
+from authtopus.api import Auth
+
+def myApiMethod( self, ... ):
+    username = # ...
+    
+    user = Auth.protected_get_user_by_username( username )
+    if user is None:
+        # Occurs when the current authenticated user's username is not
+	# username and the current authenticated user is not a mod
+        raise UnauthorizedException( 'Invalid credentials' )
+
+    # Retrieved user successfully. Do stuff...
+```
 
 Configuration
 -------------
