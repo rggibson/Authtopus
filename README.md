@@ -10,68 +10,72 @@ Installation
 
 1. The recommended method for obtaining Authtopus is to add the library as a submodule to an existing project.  For example, given that you already have a directory called `ext` that holds your third-party modules (or given that you have just created such a directory), you can then run:
 
-`git submodule add https://github.com/rggibson/Authtopus.git ext/authtopus`
+  `git submodule add https://github.com/rggibson/Authtopus.git ext/authtopus`
 
-Adding the project as a submodule allows you to pull for new updates to the library when they become available.  Alternatively, you can simply copy the authtopus directory anywhere into your project and then copy a new, updated version when necessary.
+  Adding the project as a submodule allows you to pull for new updates to the library when they become available.  Alternatively, you can simply copy the authtopus directory anywhere into your project and then copy a new, updated version when necessary.
 
-Authtopus also depends on the [endpoints-proto-datastore](https://github.com/GoogleCloudPlatform/endpoints-proto-datastore) library.  This library must also be added to your project:
-`git submodule add https://github.com/GoogleCloudPlatform/endpoints-proto-datastore.git ext/endpoints_proto_datastore`
+  Authtopus also depends on the [endpoints-proto-datastore](https://github.com/GoogleCloudPlatform/endpoints-proto-datastore) library.  This library must also be added to your project:
+  
+  `git submodule add https://github.com/GoogleCloudPlatform/endpoints-proto-datastore.git ext/endpoints_proto_datastore`
 
 2. Add the endpoints_proto_datastore and authtopus directories to your path by adding the following to appengine_config.py in your project's root directory (or create the file if it does not currently exist):
 
-.. code:: python
+  ```python
 
-    import os
-    import sys
+  import os
+  import sys
 
-    ENDPOINTS_PROJECT_DIR = os.path.join( os.path.dirname( __file__ ),
-                                          'ext/endpoints_proto_datastore' )
-    AUTHTOPUS_PROJECT_DIR = os.path.join( os.path.dirname( __file__ ),
-                                          'ext/authtopus' )
+  ENDPOINTS_PROJECT_DIR = os.path.join( os.path.dirname( __file__ ),
+                                        'ext/endpoints_proto_datastore' )
+  AUTHTOPUS_PROJECT_DIR = os.path.join( os.path.dirname( __file__ ),
+                                        'ext/authtopus' )
 
-    sys.path.extend( [ ENDPOINTS_PROJECT_DIR, AUTHTOPUS_PROJECT_DIR,
-    				  # Other directories...
-		     		  ] )
+  sys.path.extend( [ ENDPOINTS_PROJECT_DIR, AUTHTOPUS_PROJECT_DIR,
+    				# Other directories if you have more...
+		     		] )
+  ```
 
-NOTE: I actually had trouble getting appengine_config.py to run properly on startup in the [Authtopus Example](https://authtopus.appspot.com) app.  If you are getting errors similar to "No module names authtopus.api" when trying to run your app, try putting this code in `main.py` before the code shown in step 3 below.
+  NOTE: I actually had trouble getting appengine_config.py to run properly on startup in the [Authtopus Example](https://authtopus.appspot.com) app.  If you are getting errors similar to "No module names authtopus.api" when trying to run your app, try putting this code in `main.py` before the code shown in step 3 below.
 
 3. In `main.py` in your project's root directory, add the following lines if not already present:
 
-.. code:: python
+  ```python
 
-    import endpoints
-    import webapp2
+  import endpoints
+  import webapp2
 
-    from authtopus.api import Auth
-    from authtopus.cron import CleanupTokensHandler, CleanupUsersHandler
+  from authtopus.api import Auth
+  from authtopus.cron import CleanupTokensHandler, CleanupUsersHandler
 
-    API = endpoints.api_server( [ Auth,
-    	  			  # Other APIs here...
-				], restricted=False )
+  API = endpoints.api_server( [ Auth,
+    	  			# Other APIs here...
+		], restricted=False )
 
-    CRON = webapp2.WSGIApplication(
-    	 [ ( '/cron/auth/cleanup-token/?', CleanupTokensHandler ),
-	   ( '/cron/auth/cleanup-users/?', CleanupUsersHandler ) ]
-    )
+  CRON = webapp2.WSGIApplication(
+    [ ( '/cron/auth/cleanup-token/?', CleanupTokensHandler ),
+	 ( '/cron/auth/cleanup-users/?', CleanupUsersHandler ) ]
+  )
+  ```
 
 4. In `app.yaml` add the following handlers and libraries if not already present:
 
-.. code:: python
+  ```python
 
-    handlers:
-    - url: /_ah/spi/.*
-      script: main.API
-    - url: /cron/.*
-      script: main.CRON
-      login: admin
+  handlers:
+  - url: /_ah/spi/.*
+    script: main.API
+  - url: /cron/.*
+    script: main.CRON
+    login: admin
 
-    libraries:
-    - name: pycrypto
-      version: latest
-    - name: endpoints
-      version: 1.0
-    - name: webapp2
-      version: 2.5.2
+  libraries:
+  - name: pycrypto
+    version: latest
+  - name: endpoints
+    version: 1.0
+  - name: webapp2
+    version: 2.5.2
+  ```
 
 And that's it!  Well, there's actually one more step required to get email verification and password reset emails working in production.  See the configuration section below for more details on that.
 
