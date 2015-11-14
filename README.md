@@ -5,6 +5,62 @@ Authtopus is a python authorization library for use with [Google Cloud Endpoints
 
 Check out the library in action in this very simple [Authtopus Example](https://authtopus.appspot.com) app.  If you think you might like to use this library in a new or existing project, then read on.  Note that I am by no means a web security expert and while I believe the library provides secure authentication, I cannot guarantee that I didn't miss something so the library is use at your own risk.
 
+Basic Usage
+-----------
+
+To demonstrate basic usage of Authtopus on the frontend, we provide code examples using AngulasJS's $http service.  A new user registers by submitting a POST request to the `/auth/v1.0/register` endpoint with their requested credentials:
+
+```javascript
+$http.post( 'https://<name_of_site>/_ah/api/auth/v1.0/register', {
+  username: 'MrCool',
+  password: 'iamCooL',
+  email: 'mrcool@domain.com',
+  verificiation_url: '<url_sent_to_users_email_address_to_verify_email>'
+  } );
+```
+
+Upon successful registration, an email is sent to the provided email address asking the user to verify their email address by proceeding to the verification url provided in the POST request above.  In addition, after successful registration, the user can then login by sending a POST request to the `/auth/v1.0/login` endpoint with their credentials:
+
+```javascript
+$http.post( 'https://<name_of_site>/_ah/api/auth/v1.0/login', {
+  username_or_email: 'MrCool',
+  password: 'iamCooL'
+  } );
+```
+
+Alternatively, a user can login using their Facebook or Google account by sending a POST request to the `/auth/v1.0/social_login` endpoint.  A new user will be registered automatically if this is their first time logging in:
+
+```javascript
+$http.post( 'https://<name_of_site>/_ah/api/auth/v1.0/social_login', {
+  access_token: <access_token_from_social_provider>,
+  provider: 'Facebook'
+  } );
+```
+
+Upon successful login, the server responds with a `user_id_auth_token` string and a `user` object containing the user's username, email and a flag indicating if the email has been verified.  In order to authenticate future requests, the user must set the `Authorization` header to the received `user_id_auth_token` value.  For example, the user can request another verification email be sent by sending an authorized POST request to the `auth/v1.0/verify_email` endpoint:
+
+```javascript
+$http.defaults.headers.common['Authorization'] = <user_id_auth_token>;
+$http.post( 'https://<name_of_site>/_ah/api/auth/v1.0/verify_email', {
+  username: 'MrCool',
+  verification_url: '<url_sent_to_users_email_address_to_verify_email>'
+  } );
+```
+
+On the server side, new endpoints can retrieve the authentication user as follows:
+
+```python
+from endpoints import UnauthorizedException
+from authtopus.api import Auth
+
+def myApiMethod( self, ... ):
+    user = Auth.get_current_user( verified_email_required=True )
+    if user is None:
+        raise UnauthorizedException( 'Invalid credentials' )
+
+    # user is now the authenticated user, so continue with stuff...
+```
+
 Installation
 ------------
 
@@ -37,7 +93,7 @@ Installation
 
   NOTE: I actually had trouble getting appengine_config.py to run properly on startup in the [Authtopus Example](https://authtopus.appspot.com) app.  If you are getting errors similar to "No module names authtopus.api" when trying to run your app, try putting this code in `main.py` before the code shown in step 3 below.
 
-3. In `main.py` in your project's root directory, add the following lines if not already present:
+3. In `main.py` in your project's root directory, add the following lines if not already present (leaving out the optional cron handler if you choose to):
 
   ```python
 
@@ -53,7 +109,8 @@ Installation
 
   CRON = webapp2.WSGIApplication(
     [ ( '/cron/auth/cleanup-token/?', CleanupTokensHandler ),
-	 ( '/cron/auth/cleanup-users/?', CleanupUsersHandler ) ]
+      # Optional cron handler that occasionally deletes inactive users with no verified email
+      ( '/cron/auth/cleanup-users/?', CleanupUsersHandler ), ]
   )
   ```
 
@@ -79,8 +136,13 @@ Installation
 
 And that's it!  Well, there's actually one more step required to get email verification and password reset emails working in production.  See the configuration section below for more details on that.
 
-Usage
------
+Endpoints
+---------
+
+Coming soon.
+
+Retrieving Users on the Server
+------------------------------
 
 Coming soon.
 
