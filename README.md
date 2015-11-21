@@ -47,7 +47,7 @@ $http.post( 'https://<name_of_site>/_ah/api/auth/v1.0/verify_email', {
   } );
 ```
 
-On the server side, new endpoints can retrieve the authentication user as follows:
+On the server side, new endpoints can retrieve the authenticated user as follows:
 
 ```python
 from endpoints import UnauthorizedException
