@@ -183,7 +183,7 @@ Endpoints
   Errors:
     * 400 `BadRequestException` - Occurs if an invalid username is provided
     * 401 `UnauthorizedException` - Occurs if the requested username is not the username of the currently authenticated user and the currently authenticated user is not a mod (users can be assigned mod status in the datastore viewer of the developer's console)
-    * 404 `NoFoundException` - Occurs if no user exists with the requested username
+    * 404 `NotFoundException` - Occurs if no user exists with the requested username
 
 - POST: `/auth/v1.0/update_user` - Updates information for the user with the requested `old_username`
 
