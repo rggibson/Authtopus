@@ -47,7 +47,7 @@ $http.post( 'https://<name_of_site>/_ah/api/auth/v1.0/verify_email', {
   } );
 ```
 
-On the server side, new endpoints can retrieve the authentication user as follows:
+On the server side, new endpoints can retrieve the authenticated user as follows:
 
 ```python
 from endpoints import UnauthorizedException
@@ -93,7 +93,7 @@ Installation
 
   NOTE: I actually had trouble getting appengine_config.py to run properly on startup in the [Authtopus Example](https://github.com/rggibson/Authtopus-Example) app.  If you are getting errors similar to "No module names authtopus.api" when trying to run your app, try putting this code in `main.py` before the code shown in step 3 below.
 
-3. In `main.py` in your project's root directory, add the following lines if not already present (leaving out the optional cron handler if you choose to):
+3. In `main.py` in your project's root directory, add the following lines if not already present:
 
   ```python
 
@@ -109,7 +109,6 @@ Installation
 
   CRON = webapp2.WSGIApplication(
     [ ( '/cron/auth/cleanup-token/?', CleanupTokensHandler ),
-      # Optional cron handler that occasionally deletes inactive users with no verified email
       ( '/cron/auth/cleanup-users/?', CleanupUsersHandler ), ]
   )
   ```
@@ -133,6 +132,24 @@ Installation
   - name: webapp2
     version: 2.5.2
   ```
+  
+5. In `cron.yaml` add the following handlers (create the file in your project's main directory if it does not already exist).  You can skip the optional handler if you like:
+
+  ```python
+  
+  cron:
+  - description: clean up expired tokens
+    url: /cron/auth/cleanup-tokens
+    schedule: every 24 hours
+  
+  # Optional cron handler that occasionally deletes inactive users with no verified email  
+  - description: clean up unverified, inactive users
+    url: /cron/auth/cleanup-users
+    schedule: every 168 hours
+  ```
+  
+  Feel free to change the schedule to however often you like.
+  
 
 And that's it!  Well, there's actually one more step required to get email verification and password reset emails working in production.  See the configuration section below for more details on that.
 
@@ -166,7 +183,7 @@ Endpoints
   Errors:
     * 400 `BadRequestException` - Occurs if an invalid username is provided
     * 401 `UnauthorizedException` - Occurs if the requested username is not the username of the currently authenticated user and the currently authenticated user is not a mod (users can be assigned mod status in the datastore viewer of the developer's console)
-    * 404 `NoFoundException` - Occurs if no user exists with the requested username
+    * 404 `NotFoundException` - Occurs if no user exists with the requested username
 
 - POST: `/auth/v1.0/update_user` - Updates information for the user with the requested `old_username`
 
