@@ -487,7 +487,6 @@ class Auth( remote.Service ):
             raise BadRequestException( 'Unknown provider' )
         url = url.format( urlencode( { 'access_token': slm.access_token } ) )
         result = urlfetch.fetch( url )
-        logging.debug( slm.provider + ' response: ' + str( result.content ) )
         if result.status_code == 200:
             body = json.loads( result.content )
             social_id = body.get( 'id' )
@@ -516,8 +515,6 @@ class Auth( remote.Service ):
             if not verified:
                 # Don't actually use the social email if it is not verified
                 social_email = None
-        logging.debug( 'Social id: ' + str( social_id ) + '  email: '
-                       + str( social_email ) )
 
         if social_id:
             # Need to fetch the user id associated with this social id
