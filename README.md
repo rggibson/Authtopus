@@ -328,7 +328,7 @@ Secondly, the lifespan of various tokens can be set by modifying the values in `
 
 Thirdly, there are also limits to how many unexpired password reset and verify email tokens a user can have, as well as the maximum number of tokens and user to potentially delete each time the respective cron job runs.  When employing the cron job to delete inactive users with no verified email, the amount of inactivity time can be set by the `config.UNVERIFIED_USER_LIFE_HOURS` parameter.
 
-Finally, `config.user_created` can take in custom code to be run after a new
+Finally, `custom.user_created` can take in custom code to be run after a new
 user has been created.  This can allow you application to perform extra actions
 that may be necessary to take once a new user has been created.  For example,
 you may want to create a user profile with additional,

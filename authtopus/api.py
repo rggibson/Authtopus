@@ -22,6 +22,7 @@ from webapp2_extras.auth import InvalidAuthIdError, InvalidPasswordError
 from urllib import urlencode
 
 from .models import User
+from . import custom
 
 PROVIDER_URLS = dict( facebook=( 'https://graph.facebook.com/me'
                                  + '?fields=id,email&{0}' ),
@@ -413,7 +414,7 @@ class Auth( remote.Service ):
             user.send_email_verification( rm.verification_url )
 
             # Do any extra stuff needed upon user creation
-            config.user_created( user )
+            custom.user_created( user )
         else:
             # Failed to create new user.  Respond with conflicting properties
             # separated by a colon, converting auth_id to username
@@ -553,7 +554,7 @@ class Auth( remote.Service ):
                             is_mod=False )
                         if ok:
                             slm.user = info
-                            config.user_created( slm.user )
+                            custom.user_created( slm.user )
                             break
                         elif( 'email' in info
                               and social_email is not None ):
