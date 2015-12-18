@@ -411,6 +411,9 @@ class Auth( remote.Service ):
 
             # Send email verification
             user.send_email_verification( rm.verification_url )
+
+            # Do any extra stuff needed upon user creation
+            config.user_created( user )
         else:
             # Failed to create new user.  Respond with conflicting properties
             # separated by a colon, converting auth_id to username
@@ -550,6 +553,7 @@ class Auth( remote.Service ):
                             is_mod=False )
                         if ok:
                             slm.user = info
+                            config.user_created( slm.user )
                             break
                         elif( 'email' in info
                               and social_email is not None ):
