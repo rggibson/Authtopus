@@ -12,7 +12,7 @@ from webapp2_extras.appengine.auth.models import UserToken as BaseUserToken
 from webapp2_extras.appengine.auth.models import User as BaseUser
 
 from endpoints_proto_datastore.ndb import EndpointsModel
-from endpoints_proto_datastore.ndb.properties import EndpointsComputedProperty
+from endpoints_proto_datastore.ndb.properties import EndpointsAliasProperty
 
 from . import config
 
@@ -131,10 +131,10 @@ class User( BaseUser, EndpointsModel ):
     username_lower = ndb.ComputedProperty(
         lambda self: self.username.lower( ) )
     is_mod = ndb.BooleanProperty( default=False, indexed=False )
-    has_password = EndpointsComputedProperty(
-        lambda self: self.password is not None,
-        property_type=messages.BooleanField,
-        indexed=False )
+
+    @EndpointsAliasProperty( property_type=messages.BooleanField )
+    def has_password( self ):
+        return self.password is not None
 
     def check_password( self, password ):
         """ Checks that password is valid.
