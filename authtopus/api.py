@@ -8,7 +8,7 @@ from google.appengine.api import urlfetch
 
 import endpoints
 from endpoints import UnauthorizedException, BadRequestException
-from endpoints import NotFoundException, ServiceException
+from endpoints import NotFoundException, ServiceException, ForbiddenException
 
 from google.appengine.ext import ndb
 
@@ -147,25 +147,30 @@ class Auth( remote.Service ):
     def protected_get_user_by_username( cls, username ):
         """ Retreives the User object for the given username, provided the
             username is that of the currently logged in user, or the
-            currently logged in user is a mod.
+            currently logged in user is a mod.  If the username is not that
+            of the currently logged in user, and the currently logged in user
+            is not a mod, then an exception is raised.
 
         :param username:
             The username of the user to get
         :returns:
-            The appropriate User object, or None if the user does not exist
-            or the logged in user does not have authorization.
+            The appropriate User object
         """
-        if not username:
-            return None
+        if not cls.valid_username( username ):
+            raise BadRequestException( 'No or invalid username provided' )
         current_user = cls.get_current_user( verified_email_required=False )
         if current_user is None:
-            return None
+            raise UnauthorizedException( 'User not logged in' )
         elif current_user.username_lower == username.lower( ):
             return current_user
         elif current_user.is_mod:
-            return User.get_by_username( username )
+            user = User.get_by_username( username )
+            if user is None:
+                raise BadRequestException( 'No user exists for username '
+                                           + username )
+            return user
         else:
-            return None
+            raise ForbiddenException( 'Insufficient privilages' )
 
     @classmethod
     def get_local_auth_id( cls, username_or_email ):
@@ -286,33 +291,14 @@ class Auth( remote.Service ):
     def CurrentUser( self, user_msg ):
         user = self.get_current_user( verified_email_required=False )
         if user is None:
-            raise UnauthorizedException( 'Invalid credentials' )
+            raise UnauthorizedException( 'User not logged in' )
 
         return user
 
     @User.method( request_fields=( 'username', ),
                   path='get_user', http_method='GET', name='get_user' )
     def GetUser( self, user_msg ):
-        # First, get the current user
-        current_user = self.get_current_user( verified_email_required=False )
-        if current_user is None:
-            raise UnauthorizedException( 'Invalid credentials' )
-
-        if current_user.username == user_msg.username:
-            return current_user
-        elif current_user.is_mod:
-            # Validate request params
-            ok, msg = self.valid_username( user_msg.username )
-            if not ok:
-                raise BadRequestException( 'No or invalid username provided' )
-        
-            user = User.get_by_username( user_msg.username )
-            if user is None:
-                raise NotFoundException( 'No user exists for username '
-                                         + user_msg.username )
-            return user
-        else:
-            raise UnauthorizedException( 'Insufficient privilages' )
+        return self.protected_get_user_by_username( user_msg.username )
 
     class UpdateUserMessage( EndpointsModel ):
         old_username = ndb.StringProperty( )
@@ -327,8 +313,6 @@ class Auth( remote.Service ):
                                name='update_user' )
     def UpdateUser( self, spm ):
         user = self.protected_get_user_by_username( spm.old_username )
-        if user is None:
-            raise UnauthorizedException( "Cannot edit profile of other user!" )
             
         # Make sure new request params are acceptable
         invalid_params = dict( )
@@ -640,9 +624,6 @@ class Auth( remote.Service ):
         name='send_email_verification' )
     def SendEmailVerification( self, sevm ):
         user = self.protected_get_user_by_username( sevm.username )
-        if user is None:
-            raise UnauthorizedException( "Cannot send email verification for"
-                                         + " other user!" )
 
         if not sevm.verification_url:
             raise BadRequestException( "No verification url provided!" )
