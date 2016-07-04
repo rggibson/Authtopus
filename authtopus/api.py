@@ -210,7 +210,8 @@ class Auth( remote.Service ):
         :param verification_url:
             URL to send email verification when email is changed
         :returns:
-            On success, (True, user) and on failure, (False, msg)
+            On success, (True, user, verification_email_sent) and on failure,
+            (False, msg, None)
         """
         username_auth_id = cls.get_local_auth_id( user.username )
         old_email_pending_lower = user.email_pending_lower
@@ -224,7 +225,7 @@ class Auth( remote.Service ):
             user = info
         else:
             msg = '|'.join( [ key + ':Already in use' for key in info ] )
-            return False, msg
+            return False, msg, None
 
         if user.password:
             # Update local auth_ids
@@ -245,17 +246,19 @@ class Auth( remote.Service ):
                 if not ok:
                     logging.error( 'Failed to add new auth id [' + new_auth_id
                                    + ']' )
-        
+
+        verification_email_sent = False
         if( old_email_pending_lower != user.email_pending_lower
             and user.email_pending_lower != user.email_verified_lower ):
             # Resend email verification
             if verification_url:
-                user.send_email_verification( verification_url )
+                verification_email_sent = user.send_email_verification(
+                    verification_url )
             else:
                 logging.error( 'No verification url provided when updating'
                                + ' user with new username: ' + username )
 
-        return True, user
+        return True, user, verification_email_sent
 
     @classmethod
     def validate_email_internal( cls, user ):
@@ -307,8 +310,10 @@ class Auth( remote.Service ):
         old_password = ndb.StringProperty( )
         password = ndb.StringProperty( )
         verification_url = ndb.StringProperty( )
+        verification_email_sent = ndb.BooleanProperty( )
 
-    @UpdateUserMessage.method( response_fields=( 'email', 'username', ),
+    @UpdateUserMessage.method( response_fields=( 'email', 'username',
+                                                 'verification_email_sent', ),
                                path='update_user', http_method='POST',
                                name='update_user' )
     def UpdateUser( self, spm ):
@@ -337,9 +342,10 @@ class Auth( remote.Service ):
                   for key in invalid_params.keys( ) ] ) )
 
         # Update the user
-        ok, info = self.update_user_internal( user, spm.email, spm.username,
-                                              spm.password,
-                                              spm.verification_url )
+        ok, info, spm.verification_email_sent = self.update_user_internal(
+            user, spm.email, spm.username, spm.password,
+            spm.verification_url
+        )
         if not ok:
             raise ConflictException( info )
                     
@@ -697,9 +703,9 @@ class Auth( remote.Service ):
         user = User.get_by_id( spm.user_id )
 
         # Set password
-        ok, info = self.update_user_internal( user, user.email_pending,
-                                              user.username,
-                                              spm.new_password )
+        ok, info, _ = self.update_user_internal( user, user.email_pending,
+                                                 user.username,
+                                                 spm.new_password )
         if ok:
             # Password set successfully
             User.delete_password_reset_token( spm.user_id, spm.token )

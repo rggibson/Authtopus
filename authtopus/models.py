@@ -250,7 +250,7 @@ class User( BaseUser, EndpointsModel ):
         if not self.email_pending:
             logging.error( 'Unable to send email verification for user_id='
                            + str( self.get_id( ) ) + ' - no pending email' )
-            return
+            return False
         
         # Create a verify email token
         token = self.create_verify_email_token( self.get_id( ),
