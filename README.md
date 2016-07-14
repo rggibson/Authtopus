@@ -239,6 +239,7 @@ Endpoints
     * `access_token` - Access token from the social provider
     * `provider` - The social provider.  Currently only 'Facebook' and 'Google' are supported.
     * `password` - The user's password, if any
+    * `register_new_user` - Whether to register a new user or not, defaults to True
 
   Response fields:
     * `user_id_auth_token` - Token that should the `Authorization` header should be set to in order to authenticate all future requests.
@@ -246,7 +247,7 @@ Endpoints
     * `password_required` - Boolean value indicating whether a password is required to complete the login.  When true, no `user_id_auth_token` or `user` will be provided in the response.  This field will only be true when a user has already registered with a verified email address that matches the verified email address from the social provider, and that user has a password for logging in.  In this case, the user should resend the request with the user's password.  This will merge the user's social id with their User account and future social logins will not require a password.
 
   Errors:
-    * 400 `BadRequestException` - Occurs when a bad access token or provider is given
+    * 400 `BadRequestException` - Occurs when a bad access token or provider is given, or `register_new_user` is False and no matching user has registered yet.
     * 401 `UnauthorizedException` - Occurs when attempting to merge a social login with a username and password login for the first time, but the provided password is invalid.
     * 409 `ConflictException` - Occurs when email is already in use by another user, but that user has not verified the email address.  Also occurs in other rare instances when authtopus fails to set a unique username for the User or fails to generate an authorization token.
 
