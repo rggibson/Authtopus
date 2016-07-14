@@ -182,7 +182,8 @@ Endpoints
 
   Errors:
     * 400 `BadRequestException` - Occurs if an invalid username is provided
-    * 401 `UnauthorizedException` - Occurs if the requested username is not the username of the currently authenticated user and the currently authenticated user is not a mod (users can be assigned mod status in the datastore viewer of the developer's console)
+    * 401 `UnauthorizedException` - Occurs if user is not logged in
+    * 403 `ForbiddenException` - Occurs if the requested username is not the username of the currently authenticated user and the currently authenticated user is not a mod (users can be assigned mod status in the datastore viewer of the developer's console)
     * 404 `NotFoundException` - Occurs if no user exists with the requested username
 
 - POST: `/auth/v1.0/update_user` - Updates information for the user with the requested `old_username`
@@ -198,10 +199,12 @@ Endpoints
   Response fields:
     * `email` - The new email for the user
     * `username` - The new username for the user
+    * `verification_email_sent` - True if a verification email was sent to the new email address, False otherwise
 
   Errors:
     * 400 `BadRequestException` - Occurs if any of the request parameters are invalid.  The request parameters that are invalid are indicated in the error message, separated by '|' characters, where each part of the message is of the form `<field>:<invalid reason>`.
-    * 401 `UnauthorizedException` - Occurs if the requested old_username is not the username of the currently authenticated user and the currently authenticated user is not a mod
+    * 401 `UnauthorizedException` - Occurs if the user is not currently logged in
+    * 403 `ForbiddenException` - Occurs if the requested old_username is not the username of the currently authenticated user and the currently authenticated user is not a mod
     * 409 `ConflictException` - Occurs if the new email or username are already in use by another User.  The error message indicates which fields are conflicted, separated by a '|' character.
 
 - POST: `/auth/v1.0/register` - Registers a new user
@@ -265,7 +268,8 @@ Endpoints
 
   Errors:
     * 400 `BadRequestException` - Occurs when no verification url is provided
-    * 401 `UnauthorizedException` - Occurs when the requested `username` does not belong to the currently authorized user and the currently authenticated user is not a mod
+    * 401 `UnauthorizedException` - Occurs when the user is not logged in
+    * 403 `ForbiddenException` - Occurs when the requested `username` does not belong to the currently authorized user and the currently authenticated user is not a mod
     * 409 `ConflictException` - Occurs when too many verification emails have recently been sent to the user's email address (see Configuration section below)
 
 - POST: `/auth/v1.0/verify_email` - Verify a user's email address
@@ -275,7 +279,7 @@ Endpoints
 
   Erros:
     * 400 `BadRequestException` - Occurs when token is invalid
-    * 401 `UnauthorizedException` - Occurs when either no user is authenticated or the currently authenticated user does not own the requested token
+    * 401 `UnauthorizedException` - Occurs when no user is authenticated
 
 - POST: `/auth/v1.0/password_reset` - Sends a password reset email
 
@@ -295,8 +299,8 @@ Endpoints
      * `token` - Password reset token from the password reset email
 
    Errors:
-     * 400 `BadRequestException` - Occurs when `password` does not meet the required criteria (4-20 characters in length)
-     * 401 `UnauthorizedException` - Occurs when an invalid token is provided
+     * 400 `BadRequestException` - Occurs when `new_password` does not meet the required criteria (4-20 characters in length)
+     * 409 `ForbiddenException` - Occurs when an invalid token is provided
 
 Retrieving Users on the Server
 ------------------------------
