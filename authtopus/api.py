@@ -460,6 +460,7 @@ class Auth( remote.Service ):
         access_token = ndb.StringProperty( )
         provider = ndb.StringProperty( )
         password = ndb.StringProperty( )
+        register_new_user = ndb.BooleanProperty( default=True )
 
         # Response params
         user_id_auth_token = ndb.StringProperty( )
@@ -467,7 +468,8 @@ class Auth( remote.Service ):
         password_required = ndb.BooleanProperty( default=False )
 
     @SocialLoginMessage.method( request_fields=( 'access_token', 'provider',
-                                                 'password', ),
+                                                 'password',
+                                                 'register_new_user', ),
                                 path='social_login',
                                 http_method='POST',
                                 name='social_login' )
@@ -523,7 +525,15 @@ class Auth( remote.Service ):
                 if social_email is not None:
                     slm.user = User.get_by_email_verified( social_email )
                 if slm.user is None:
-                    # Email not in use either. Create a new user.
+                    # Email not in use either
+                    if not slm.register_new_user:
+                        msg = 'Failed to find registered user'
+                        if social_email is not None:
+                            msg += ' with email [' + social_email + ']'
+                        msg += '. Have you registered yet?'
+                        raise BadRequestException( msg )
+
+                    # Create a new user.
 
                     # Try creating a new user by varying the username
                     for num in range( 1000 ):
@@ -699,7 +709,7 @@ class Auth( remote.Service ):
         # Check for valid token + grab the user
         valid = User.validate_password_reset_token( spm.user_id, spm.token )
         if not valid:
-            raise UnauthorizedException( 'Invalid token for setting password' )
+            raise ForbiddenException( 'Invalid token for setting password' )
         user = User.get_by_id( spm.user_id )
 
         # Set password
