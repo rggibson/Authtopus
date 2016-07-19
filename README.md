@@ -6,7 +6,7 @@ Authtopus is a python authorization library for use with [Google Cloud Endpoints
 * Standard username + password registrations and logins
 * Registrations and logins via social accounts (only Facebook and Google currently supported, but more social providers could be supported in the future)
 * Registrations via different methods with matching verified email address are merged into one user account
-* Optional access tokens to restrict user registration only to clients with valid tokens (for example, beta keys)
+* Optional access tokens to restrict user registration to clients with valid tokens (for example, beta keys)
 
 While GCE does have authentication built-in, as of writing this document GCE authentication only supports registration / login using Google accounts.  Authtopus, on the other hand, supports much more.
 
