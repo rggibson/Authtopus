@@ -312,7 +312,7 @@ Endpoints
      * 400 `BadRequestException` - Occurs when `new_password` does not meet the required criteria (4-20 characters in length)
      * 409 `ForbiddenException` - Occurs when an invalid token is provided
 
- - POST: `/auth/v1.0/generate_access_tokens` - Generates a new set of access tokens (mods only)
+- POST: `/auth/v1.0/generate_access_tokens` - Generates a new set of access tokens (mods only)
 
    Request fields:
      * `num_tokens` - The number of tokens to generate
