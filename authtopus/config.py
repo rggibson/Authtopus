@@ -35,11 +35,16 @@ Cheers,
 Example.com
 """
 
+# Access tokens restrict user registration to those who have been given such
+# a token (e.g. beta keys)
+USE_ACCESS_TOKENS = False
+
 # How long different token types are good for before becoming invalid
 TOKEN_LIFE_HOURS = {
     'auth': 4,
     'verify_email': 24,
-    'password_reset': 3
+    'password_reset': 3,
+    'access': 720, # 30 days
 }
 
 # How many unexpired tokens a user can have

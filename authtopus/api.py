@@ -22,6 +22,7 @@ from webapp2_extras.auth import InvalidAuthIdError, InvalidPasswordError
 from urllib import urlencode
 
 from .models import User
+from . import config
 from . import custom
 
 PROVIDER_URLS = dict( facebook=( 'https://graph.facebook.com/me'
@@ -356,6 +357,7 @@ class Auth( remote.Service ):
         email = ndb.StringProperty( )
         username = ndb.StringProperty( )
         password = ndb.StringProperty( )
+        access_token = ndb.StringProperty( )
         verification_url = ndb.StringProperty( )
 
     @RegisterMessage.method( path='register', http_method='POST',
@@ -372,11 +374,14 @@ class Auth( remote.Service ):
         ok, msg = self.valid_email( rm.email )
         if not ok:
             invalid_params['email'] = msg
+        if( config.USE_ACCESS_TOKENS
+            and not User.validate_access_token( rm.access_token ) ):
+            invalid_params['access_token'] = 'Invalid access token'
         if not rm.verification_url:
             invalid_params['verification_url'] = (
                 'A verification url is required' )
         if len( invalid_params.keys( ) ) > 0:
-            # Some params were invalid.  Return 400 response.            
+            # Some params were invalid.  Return 400 response.      
             raise BadRequestException( '|'.join(
                 [ key + ':' + invalid_params[ key ]
                   for key in invalid_params.keys( ) ] ) )
@@ -402,6 +407,9 @@ class Auth( remote.Service ):
 
             # Send email verification
             user.send_email_verification( rm.verification_url )
+
+            if config.USE_ACCESS_TOKENS:
+                User.delete_access_token( rm.access_token )
 
             # Do any extra stuff needed upon user creation
             custom.user_created( user )
@@ -461,6 +469,7 @@ class Auth( remote.Service ):
         provider = ndb.StringProperty( )
         password = ndb.StringProperty( )
         register_new_user = ndb.BooleanProperty( default=True )
+        authtopus_access_token = ndb.StringProperty( )
 
         # Response params
         user_id_auth_token = ndb.StringProperty( )
@@ -469,7 +478,8 @@ class Auth( remote.Service ):
 
     @SocialLoginMessage.method( request_fields=( 'access_token', 'provider',
                                                  'password',
-                                                 'register_new_user', ),
+                                                 'register_new_user',
+                                                 'authtopus_access_token', ),
                                 path='social_login',
                                 http_method='POST',
                                 name='social_login' )
@@ -532,6 +542,10 @@ class Auth( remote.Service ):
                             msg += ' with email [' + social_email + ']'
                         msg += '. Have you registered yet?'
                         raise BadRequestException( msg )
+                    elif( config.USE_ACCESS_TOKENS
+                          and not User.validate_access_token(
+                              slm.authtopus_access_token ) ):
+                        raise BadRequestException( 'Invalid access token' )
 
                     # Create a new user.
 
@@ -554,6 +568,9 @@ class Auth( remote.Service ):
                             is_mod=False )
                         if ok:
                             slm.user = info
+                            if config.USE_ACCESS_TOKENS:
+                                User.delete_access_token(
+                                    slm.authtopus_access_token )
                             custom.user_created( slm.user )
                             break
                         elif( 'email' in info
@@ -724,3 +741,31 @@ class Auth( remote.Service ):
                                        + ' again later.' )
 
         return spm
+
+
+    class GenerateAccessTokensMessage( EndpointsModel ):
+        # Request params
+        num_tokens = ndb.IntegerProperty( required=True )
+
+        # Response params
+        access_tokens = ndb.StringProperty( repeated=True )
+
+    @GenerateAccessTokensMessage.method( request_fields=( 'num_tokens', ),
+                                         response_fields=( 'access_tokens', ),
+                                         path='generate_access_tokens',
+                                         http_method='POST',
+                                         name='generate_access_tokens' )
+    def GenerateAccessTokens( self, gatm ):
+        # Make sure user is logged in and is a mod
+        user = self.get_current_user( verified_email_required=False )
+        if user is None:
+            raise UnauthorizedException( 'User must be logged in to generate '
+                                         + 'access tokens' )
+        if not user.is_mod:
+            raise ForbiddenException( 'Insufficient privilages' )
+
+        # Generate response
+        gatm.access_tokens = [ User.create_access_token( )
+                               for _ in range( gatm.num_tokens ) ]
+        
+        return gatm

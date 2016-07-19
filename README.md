@@ -1,7 +1,14 @@
 Authtopus
 ==========
 
-Authtopus is a python authorization library for use with [Google Cloud Endpoints (GCE)](https://cloud.google.com/endpoints/).  While GCE does have authentication built-in, as of writing this document GCE authentication only supports registration / login using Google accounts.  Authtopus, on the other hand, supports standard username and password logins as well as logins via social accounts (only Facebook and Google currently supported, but more social providers could be supported in the future).  Registrations via different methods with matching verified email addresses are merged into one user account.
+Authtopus is a python authorization library for use with [Google Cloud Endpoints (GCE)](https://cloud.google.com/endpoints/).  The library boasts the following features:
+
+* Standard username + password registrations and logins
+* Registrations and logins via social accounts (only Facebook and Google currently supported, but more social providers could be supported in the future)
+* Registrations via different methods with matching verified email address are merged into one user account
+* Optional access tokens to restrict user registration only to clients with valid tokens (for example, beta keys)
+
+While GCE does have authentication built-in, as of writing this document GCE authentication only supports registration / login using Google accounts.  Authtopus, on the other hand, supports much more.
 
 Check out the library in action in this very simple [Authtopus Example](https://authtopus.appspot.com) app, along with [the code that runs the app](https://github.com/rggibson/Authtopus-Example).  If you think you might like to use this library in a new or existing project, then read on.  Note that I am by no means a web security expert and while I believe the library provides secure authentication, I cannot guarantee that I didn't miss something so the library is use at your own risk.
 
@@ -213,6 +220,7 @@ Endpoints
     * `email` - The user's email
     * `username` - The user's username
     * `password` - The user's password
+    * `access_token` - An access token that may be required for the user to register. Ignored if `config.USE_ACCESS_TOKENS` is `False`.
     * `verification_url` - URL sent to the user's email address where the user is directed to go to verify their email address
 
   Errors:
@@ -240,6 +248,7 @@ Endpoints
     * `provider` - The social provider.  Currently only 'Facebook' and 'Google' are supported.
     * `password` - The user's password, if any
     * `register_new_user` - Whether to register a new user or not, defaults to True
+    * `authtopus_access_token` - An access token that may be required for a new user to login. Ignored when `config.USE_ACCESS_TOKENS` is `False`.
 
   Response fields:
     * `user_id_auth_token` - Token that should the `Authorization` header should be set to in order to authenticate all future requests.
@@ -247,7 +256,7 @@ Endpoints
     * `password_required` - Boolean value indicating whether a password is required to complete the login.  When true, no `user_id_auth_token` or `user` will be provided in the response.  This field will only be true when a user has already registered with a verified email address that matches the verified email address from the social provider, and that user has a password for logging in.  In this case, the user should resend the request with the user's password.  This will merge the user's social id with their User account and future social logins will not require a password.
 
   Errors:
-    * 400 `BadRequestException` - Occurs when a bad access token or provider is given, or `register_new_user` is False and no matching user has registered yet.
+    * 400 `BadRequestException` - Occurs when a bad access token or provider is given, `register_new_user` is False and no matching user has registered yet, or authtopus is configured to use access tokens, a new user attemtpted to login, but the access token was invalid.
     * 401 `UnauthorizedException` - Occurs when attempting to merge a social login with a username and password login for the first time, but the provided password is invalid.
     * 409 `ConflictException` - Occurs when email is already in use by another user, but that user has not verified the email address.  Also occurs in other rare instances when authtopus fails to set a unique username for the User or fails to generate an authorization token.
 
@@ -303,6 +312,18 @@ Endpoints
      * 400 `BadRequestException` - Occurs when `new_password` does not meet the required criteria (4-20 characters in length)
      * 409 `ForbiddenException` - Occurs when an invalid token is provided
 
+ - POST: `/auth/v1.0/generate_access_tokens` - Generates a new set of access tokens (mods only)
+
+   Request fields:
+     * `num_tokens` - The number of tokens to generate
+
+   Response fields:
+     * `access_tokens` - List of generated access tokens
+
+   Errors:
+     * 401 `UnauthorizedException` - Occurs when the user is not logged in
+     * 403 `ForbiddenException` - Occurs when the user is not a mod
+
 Retrieving Users on the Server
 ------------------------------
 
@@ -333,12 +354,14 @@ Secondly, the lifespan of various tokens can be set by modifying the values in `
 
 Thirdly, there are also limits to how many unexpired password reset and verify email tokens a user can have, as well as the maximum number of tokens and user to potentially delete each time the respective cron job runs.  When employing the cron job to delete inactive users with no verified email, the amount of inactivity time can be set by the `config.UNVERIFIED_USER_LIFE_HOURS` parameter.
 
-Finally, `custom.user_created` can take in custom code to be run after a new
+Fourthly, `custom.user_created` can take in custom code to be run after a new
 user has been created.  This can allow you application to perform extra actions
 that may be necessary to take once a new user has been created.  For example,
 you may want to create a user profile with additional,
 non-authentication-related properties and associate that profile with the new
 user's id.
+
+Finally, access tokens can be enabled by setting `config.USE_ACCESS_TOKENS` to `True`.  With access tokens on, user registration will fail without a valid token.  To generate new tokens, a mod must submit a POST request to the `/auth/v1.0/generate_access_tokens` endpoint.  Tokens are invalidated once a user successfully registers with one.
 
 Contact
 -------

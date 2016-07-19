@@ -20,10 +20,71 @@ from . import config
 # provided by webapp2_extras:
 # https://webapp-improved.appspot.com/_modules/webapp2_extras/appengine/auth
 # /models.html
-
 class UserToken( BaseUserToken ):
-    # Need the user to be indexed
-    user = ndb.StringProperty( required=True, indexed=True )
+    # Need the user to be indexed, but not required as access tokens do not
+    # need a user
+    user = ndb.StringProperty( required=False, indexed=True )
+
+    @classmethod
+    def get_key( cls, user, subject, token ):
+        """Returns a token key.
+
+        :param user:
+            User unique ID, or None if no user associated with the given token
+        :param subject:
+            The subject of the key. Currently have:
+
+            - 'auth'
+            - 'verify_email'
+            - 'password_reset'
+            - 'access'
+        :param token:
+            Randomly generated token.
+        :returns:
+            ``model.Key`` containing a string id in the following format:
+            ``{user_id}.{subject}.{token}.``
+        """
+        if user is not None:
+            return ndb.model.Key( cls, '%s.%s.%s' % ( str(user),
+                                                      subject, token ) )
+        else:
+            return ndb.model.Key( cls, '%s.%s' % ( subject, token ) )
+
+    @classmethod
+    def create(cls, user, subject, token=None):
+        """Creates a new token for the given user, if any.
+
+        :param user:
+            User unique ID, or None if no user is to be associated with the
+            created token.
+        :param subject:
+            The subject of the key. Currently have:
+
+            - 'auth'
+            - 'verify_email'
+            - 'password_reset'
+            - 'access'
+        :param token:
+            Optionally an existing token may be provided.
+            If None, a random token will be generated.
+        :returns:
+            The newly created :class:`UserToken`.
+        """
+        if user is not None:
+            user = str( user )
+        if token is None:
+            if subject == 'access':
+                # We use 16 uppercase alphanumeric characters for access
+                # keys
+                pool = map( chr, range( 65, 91 ) )
+                pool.extend( [ str( x ) for x in range( 0, 10 ) ] )
+                token = security.generate_random_string( length=16, pool=pool )
+            else:
+                token = security.generate_random_string(entropy=128)
+        key = cls.get_key( user, subject, token )
+        entity = cls( key=key, user=user, subject=subject, token=token )
+        entity.put( )
+        return entity
 
     @classmethod
     def count( cls, user, subject, limit, life_hours ):
@@ -404,7 +465,7 @@ class User( BaseUser, EndpointsModel ):
             subject, and token.
 
         :param user_id:
-            Unique user id
+            Unique user id, or None if no user associated with the token
         :param subject:
             The subject of the key
         :param token:
@@ -523,6 +584,29 @@ class User( BaseUser, EndpointsModel ):
     @classmethod
     def delete_password_reset_token( cls, user_id, token ):
         cls.token_model.get_key( user_id, 'password_reset', token ).delete( )
+
+    # Create, validate and delete access token follows those for
+    # auth and signup tokens implemented in BaseUser class
+    @classmethod
+    def create_access_token( cls ):
+        """ Creates a new access token
+
+        :returns:
+            Token string that is created.
+        """
+        entity = cls.token_model.create( None, 'access' )
+        return entity.token
+
+    @classmethod
+    def validate_access_token( cls, token ):
+        return cls.validate_token(
+            None, 'access', token.upper( ),
+            config.TOKEN_LIFE_HOURS.get( 'access' )
+        )
+
+    @classmethod
+    def delete_access_token( cls, token ):
+        cls.token_model.get_key( None, 'access', token ).delete( )
 
     @classmethod
     def create_user( cls, auth_id, unique_properties=None, **user_values ):
