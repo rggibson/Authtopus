@@ -1,4 +1,5 @@
 import logging
+import re
 
 from datetime import datetime, timedelta
 
@@ -604,7 +605,7 @@ class User( BaseUser, EndpointsModel ):
     def validate_access_token( cls, token ):
         # Strip out dash characters
         return cls.validate_token(
-            None, 'access', token.translate( None, '-' ).upper( ),
+            None, 'access', re.sub( '-', '', token ).upper( ),
             config.TOKEN_LIFE_HOURS.get( 'access' )
         )
 
@@ -612,8 +613,7 @@ class User( BaseUser, EndpointsModel ):
     def delete_access_token( cls, token ):
         # Strip out dash characters
         cls.token_model.get_key(
-            None, 'access',
-            token.translate( None, '-' ).upper( )
+            None, 'access', re.sub( '-', '', token ).upper( )
         ).delete( )
 
     @classmethod
