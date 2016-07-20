@@ -595,18 +595,26 @@ class User( BaseUser, EndpointsModel ):
             Token string that is created.
         """
         entity = cls.token_model.create( None, 'access' )
-        return entity.token
+
+        # Add dash characters after every 4 characters
+        s = entity.token
+        return '%s-%s-%s-%s' % ( s[:4], s[4:8], s[8:12], s[12:] )
 
     @classmethod
     def validate_access_token( cls, token ):
+        # Strip out dash characters
         return cls.validate_token(
-            None, 'access', token.upper( ),
+            None, 'access', token.translate( None, '-' ).upper( ),
             config.TOKEN_LIFE_HOURS.get( 'access' )
         )
 
     @classmethod
     def delete_access_token( cls, token ):
-        cls.token_model.get_key( None, 'access', token ).delete( )
+        # Strip out dash characters
+        cls.token_model.get_key(
+            None, 'access',
+            token.translate( None, '-' ).upper( )
+        ).delete( )
 
     @classmethod
     def create_user( cls, auth_id, unique_properties=None, **user_values ):
