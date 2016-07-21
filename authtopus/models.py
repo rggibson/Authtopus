@@ -415,36 +415,42 @@ class User( BaseUser, EndpointsModel ):
             return q.get( )
     
     @classmethod
-    def get_by_email_verified( cls, email ):
+    def get_by_email_verified( cls, email, key_only=False ):
         """ Retrieves a User object by verified email address
 
         :param email:
             Verified email address of the User to retrieve
+        :param key_only:
+            Indicates whether to actually retrieve the User object or just the
+            key
         :returns:
             The User corresponding to this email, or None if no such
             user exists.
         """
         if email:
             q = cls.query( cls.email_verified_lower == email.lower( ) )
-            return q.get( )
+            return q.get( keys_only=key_only )
 
     @classmethod
-    def get_by_email( cls, email ):
+    def get_by_email( cls, email, key_only=False ):
         """ Retrieves a User object by email address (verified or pending)
 
         :param email:
             Email address of the User to retrieve
+        :param key_only:
+            Indicates whether to actually retrieve the User object or just the
+            key
         :returns:
             The User corresponding to this email, or None if no such
             user exists.
         """
-        user = cls.get_by_email_verified( email )
+        user = cls.get_by_email_verified( email, key_only=key_only )
         if user:
             return user
             
         if email:
             q = cls.query( cls.email_pending_lower == email.lower( ) )
-            return q.get( )
+            return q.get( keys_only=key_only )
 
     @classmethod
     def get_id_by_auth_id( cls, auth_id ):
