@@ -98,8 +98,6 @@ Installation
 		     		] )
   ```
 
-  NOTE: I actually had trouble getting appengine_config.py to run properly on startup in the [Authtopus Example](https://github.com/rggibson/Authtopus-Example) app.  If you are getting errors similar to "No module names authtopus.api" when trying to run your app, try putting this code in `main.py` before the code shown in step 3 below.
-
 3. In `main.py` in your project's root directory, add the following lines if not already present:
 
   ```python
