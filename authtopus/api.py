@@ -9,6 +9,7 @@ from google.appengine.api import urlfetch
 import endpoints
 from endpoints import UnauthorizedException, BadRequestException
 from endpoints import NotFoundException, ServiceException, ForbiddenException
+from endpoints import InternalServerErrorException
 
 from google.appengine.ext import ndb
 
@@ -492,7 +493,13 @@ class Auth( remote.Service ):
         if url is None:
             raise BadRequestException( 'Unknown provider' )
         url = url.format( urlencode( { 'access_token': slm.access_token } ) )
-        result = urlfetch.fetch( url )
+        try:
+            result = urlfetch.fetch( url )
+        except urlfetch.Error:
+            raise InternalServerErrorException(
+                'Failed to login with {p}. Please try again later.'.format(
+                    p=provider )
+            )
         if result.status_code == 200:
             body = json.loads( result.content )
             social_id = body.get( 'id' )
