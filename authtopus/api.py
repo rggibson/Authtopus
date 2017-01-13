@@ -5,6 +5,7 @@ import re
 import httplib
 
 from google.appengine.api import urlfetch
+from google.appengine.api.urlfetch_errors import DeadlineExceededError
 
 import endpoints
 from endpoints import UnauthorizedException, BadRequestException
@@ -500,6 +501,11 @@ class Auth( remote.Service ):
                 'Failed to login with {p}. Please try again later.'.format(
                     p=provider )
             )
+        except DeadlineExceededError:
+            raise InternalServerErrorException(
+                'Request to login with {p} timed out. '.format(
+                    p=provider ) + 'Please try again later'
+            )
         if result.status_code == 200:
             body = json.loads( result.content )
             social_id = body.get( 'id' )
@@ -685,6 +691,11 @@ class Auth( remote.Service ):
         user = self.get_current_user( verified_email_required=False )
         if user is None:
             raise UnauthorizedException( 'Must be logged in to verify email' )
+
+        if( user.email_verified is not None
+            and user.email_verified_lower == user.email_pending_lower ):
+            # Already verified, nothing to do
+            return vem
         
         # Check for valid token
         user_id = user.get_id( )
