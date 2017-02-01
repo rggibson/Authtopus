@@ -361,6 +361,7 @@ class Auth( remote.Service ):
         password = ndb.StringProperty( )
         access_token = ndb.StringProperty( )
         verification_url = ndb.StringProperty( )
+        data = ndb.TextProperty( )
 
     @RegisterMessage.method( path='register', http_method='POST',
                              name='register' )
@@ -414,7 +415,7 @@ class Auth( remote.Service ):
                 User.delete_access_token( rm.access_token )
 
             # Do any extra stuff needed upon user creation
-            custom.user_created( user )
+            custom.user_created( user, rm.data )
         else:
             # Failed to create new user.  Respond with conflicting properties
             # separated by a colon, converting auth_id to username
@@ -472,6 +473,7 @@ class Auth( remote.Service ):
         password = ndb.StringProperty( )
         register_new_user = ndb.BooleanProperty( default=True )
         authtopus_access_token = ndb.StringProperty( )
+        data = ndb.TextProperty( )
 
         # Response params
         user_id_auth_token = ndb.StringProperty( )
@@ -481,7 +483,8 @@ class Auth( remote.Service ):
     @SocialLoginMessage.method( request_fields=( 'access_token', 'provider',
                                                  'password',
                                                  'register_new_user',
-                                                 'authtopus_access_token', ),
+                                                 'authtopus_access_token',
+                                                 'data', ),
                                 path='social_login',
                                 http_method='POST',
                                 name='social_login' )
@@ -584,7 +587,7 @@ class Auth( remote.Service ):
                             if config.USE_ACCESS_TOKENS:
                                 User.delete_access_token(
                                     slm.authtopus_access_token )
-                            custom.user_created( slm.user )
+                            custom.user_created( slm.user, slm.data )
                             break
                         elif( 'email' in info
                               and social_email is not None ):

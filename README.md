@@ -22,7 +22,8 @@ $http.post( 'https://<name_of_site>/_ah/api/auth/v1.0/register', {
   username: 'MrCool',
   password: 'iamCooL',
   email: 'mrcool@domain.com',
-  verificiation_url: '<url_sent_to_users_email_address_to_verify_email>'
+  verification_url: '<url_sent_to_users_email_address_to_verify_email>',
+  data: '<application_specific_data_forwarded_upon_successful_register>'
   } );
 ```
 
@@ -220,6 +221,7 @@ Endpoints
     * `password` - The user's password
     * `access_token` - An access token that may be required for the user to register. Ignored if `config.USE_ACCESS_TOKENS` is `False`.
     * `verification_url` - URL sent to the user's email address where the user is directed to go to verify their email address
+    * `data` - Stringified application-specific data that is passed along after a successful registration (see `custom.user_created` in the Configuration section below).
 
   Errors:
     * 400 `BadRequestException` - Occurs if any of the request parameters are invalid.  The request parameters that are invalid are indicated in the error message, separated by '|' characters, where each part of the message is of the form `<field>:<invalid reason>`.
@@ -353,7 +355,7 @@ Secondly, the lifespan of various tokens can be set by modifying the values in `
 Thirdly, there are also limits to how many unexpired password reset and verify email tokens a user can have, as well as the maximum number of tokens and user to potentially delete each time the respective cron job runs.  When employing the cron job to delete inactive users with no verified email, the amount of inactivity time can be set by the `config.UNVERIFIED_USER_LIFE_HOURS` parameter.
 
 Fourthly, `custom.user_created` can take in custom code to be run after a new
-user has been created.  This can allow you application to perform extra actions
+user has been created.  This can allow your application to perform extra actions
 that may be necessary to take once a new user has been created.  For example,
 you may want to create a user profile with additional,
 non-authentication-related properties and associate that profile with the new
