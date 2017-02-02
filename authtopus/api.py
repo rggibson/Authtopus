@@ -542,7 +542,7 @@ class Auth( remote.Service ):
                 if len( username ) > 17:
                     username = username[ :17 ]
             if not username:
-                username = 'dummy'
+                username = 'user'
             if not verified:
                 # Don't actually use the social email if it is not verified
                 social_email = None
