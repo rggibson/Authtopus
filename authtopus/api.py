@@ -1,4 +1,5 @@
 import logging
+import traceback
 import json
 import os
 import re
@@ -415,7 +416,15 @@ class Auth( remote.Service ):
                 User.delete_access_token( rm.access_token )
 
             # Do any extra stuff needed upon user creation
-            custom.user_created( user, rm.data )
+            try:
+                custom.user_created( user, rm.data )
+            except:
+                logging.error(
+                    'Exception hit performing custom user created '
+                    + 'work.  Stack trace:\n{s}'.format(
+                        s=traceback.format_exc( ) )
+                )
+                
         else:
             # Failed to create new user.  Respond with conflicting properties
             # separated by a colon, converting auth_id to username
@@ -587,7 +596,14 @@ class Auth( remote.Service ):
                             if config.USE_ACCESS_TOKENS:
                                 User.delete_access_token(
                                     slm.authtopus_access_token )
-                            custom.user_created( slm.user, slm.data )
+                            try:
+                                custom.user_created( slm.user, slm.data )
+                            except:
+                                logging.error(
+                                    'Exception hit performing custom user '
+                                    + 'created work.  Stack trace:\n{s}'.format(
+                                        s=traceback.format_exc( ) )
+                                )
                             break
                         elif( 'email' in info
                               and social_email is not None ):
