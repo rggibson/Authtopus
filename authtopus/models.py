@@ -609,6 +609,9 @@ class User( BaseUser, EndpointsModel ):
 
     @classmethod
     def validate_access_token( cls, token ):
+        if not token:
+            return False
+        
         # Strip out dash characters
         return cls.validate_token(
             None, 'access', re.sub( '-', '', token ).upper( ),
