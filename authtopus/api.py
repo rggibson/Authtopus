@@ -565,7 +565,7 @@ class Auth( remote.Service ):
                         msg = 'Failed to find registered user'
                         if social_email is not None:
                             msg += ' with verified email [' + social_email + ']'
-                        msg += '. Have you registered yet?'
+                        msg += '. Did you register with a different method?'
                         raise BadRequestException( msg )
                     elif( config.USE_ACCESS_TOKENS
                           and not User.validate_access_token(
